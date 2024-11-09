@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ninja Star Marketplace - Admin</title>
+    <title>Admin Ninja Star Marketplace</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -52,44 +52,27 @@
             margin-top: 10px;
             border-radius: 4px;
         }
-        #login-btn {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #34a853;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        #login-btn:hover {
-            background-color: #2c8f3b;
-        }
-        #user-info {
-            margin-top: 20px;
-        }
     </style>
 </head>
 <body>
-    <h1>Ninja Star Marketplace - Admin</h1>
-    
-    <!-- Login Button (shows if not logged in) -->
-    <button id="login-btn" onclick="loginWithGoogle()">Login with Google</button>
-
-    <!-- Display User Info after Login -->
-    <div id="user-info" style="display:none;">
-        <p id="user-email"></p>
-        <button onclick="logout()">Logout</button>
-    </div>
-
+    <h1>Admin Ninja Star Marketplace</h1>
     <div id="product-list">
-        <h2>Available Ninja Stars</h2>
+        <h2>Manage Ninja Stars</h2>
         <div id="products-container"></div>
+        <h3>Add New Ninja Star</h3>
+        <form id="add-product-form">
+            <input type="text" id="blade-count" placeholder="Blade count" required>
+            <input type="text" id="color" placeholder="Color" required>
+            <input type="file" id="image" required>
+            <button type="submit">Add Ninja Star</button>
+        </form>
     </div>
 
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyDUODWU7BjsFPqIYCETDvRmM4Mn0xwzyZ8",
@@ -100,42 +83,23 @@
             appId: "1:838969552210:web:bb7faa1ca1cc83b9705e8b",
             measurementId: "G-PEQDSMZQR2"
         };
-
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
         const db = firebase.firestore();
+        const auth = firebase.auth();
 
-        // Admin UID (for this example, replace with actual admin's UID from Firebase Authentication)
-        const adminUID = "your_admin_uid_here";
+        // List of allowed admin emails
+        const allowedAdmins = ['eimsr.tarun1@gmail.com']; // Replace with actual admin emails
 
-        // Login with Google
-        function loginWithGoogle() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).then(result => {
-                const user = result.user;
-                document.getElementById('login-btn').style.display = 'none';
-                document.getElementById('user-info').style.display = 'block';
-                document.getElementById('user-email').innerText = `Logged in as: ${user.email}`;
-                if (user.uid !== adminUID) {
-                    alert("You are not authorized to access this page.");
-                    auth.signOut();
-                } else {
-                    loadProducts();
-                }
-            }).catch(error => console.error("Error signing in:", error));
-        }
+        // Check if the user is authenticated and authorized
+        auth.onAuthStateChanged(user => {
+            if (!user || !allowedAdmins.includes(user.email)) {
+                // Redirect unauthorized users to login or another page
+                window.location.href = 'login.html'; // Or any other page for non-admins
+            } else {
+                loadProducts();  // Proceed with loading products if the user is authorized
+            }
+        });
 
-        // Logout
-        function logout() {
-            auth.signOut().then(() => {
-                document.getElementById('login-btn').style.display = 'block';
-                document.getElementById('user-info').style.display = 'none';
-                document.getElementById('products-container').innerHTML = '';
-            }).catch(error => console.error("Error signing out:", error));
-        }
-
-        // Load Products from Firestore
         function loadProducts() {
             db.collection("products").get().then(querySnapshot => {
                 const container = document.getElementById("products-container");
@@ -147,11 +111,54 @@
                     productDiv.innerHTML = `
                         <h3>${product.bladeCount} Blade - ${product.color}</h3>
                         <img src="${product.image}" alt="Ninja Star">
+                        <button onclick="removeProduct('${doc.id}')">Remove</button>
                     `;
                     container.appendChild(productDiv);
                 });
             }).catch(error => console.error("Error loading products:", error));
         }
+
+        function removeProduct(productId) {
+            db.collection("products").doc(productId).delete()
+                .then(() => {
+                    alert("Product removed successfully!");
+                    loadProducts(); // Refresh product list
+                })
+                .catch(error => {
+                    console.error("Error removing product:", error);
+                    alert("Error removing product!");
+                });
+        }
+
+        // Handle the form submission for adding a new product
+        document.getElementById('add-product-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const bladeCount = document.getElementById('blade-count').value;
+            const color = document.getElementById('color').value;
+            const imageFile = document.getElementById('image').files[0];
+
+            if (imageFile) {
+                const storageRef = firebase.storage().ref('ninjaStars/' + imageFile.name);
+                storageRef.put(imageFile).then(snapshot => {
+                    snapshot.ref.getDownloadURL().then(url => {
+                        db.collection("products").add({
+                            bladeCount: bladeCount,
+                            color: color,
+                            image: url
+                        })
+                        .then(() => {
+                            alert("Ninja Star added successfully!");
+                            loadProducts(); // Refresh product list
+                        })
+                        .catch(error => {
+                            console.error("Error adding product:", error);
+                            alert("Error adding product!");
+                        });
+                    });
+                });
+            }
+        });
     </script>
 </body>
 </html>
