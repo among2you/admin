@@ -87,9 +87,11 @@
   </table>
 
   <!-- Load Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-firestore.js"></script>
-  <script>
+  <script type="module">
+    // Import the necessary Firebase modules
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.10.0/firebase-app.js';
+    import { getFirestore, collection, getDocs, addDoc, doc, deleteDoc } from 'https://www.gstatic.com/firebasejs/9.10.0/firebase-firestore.js';
+
     // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyDUODWU7BjsFPqIYCETDvRmM4Mn0xwzyZ8",
@@ -102,52 +104,44 @@
     };
 
     // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
     // Function to get ninja stars and display them in the table
-    function loadNinjaStars() {
+    async function loadNinjaStars() {
       const tableBody = document.getElementById("ninjaStarsTable").getElementsByTagName('tbody')[0];
+      const querySnapshot = await getDocs(collection(db, "ninja_stars"));
 
-      db.collection("ninja_stars").get().then((querySnapshot) => {
-        tableBody.innerHTML = ''; // Clear existing content
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          const row = tableBody.insertRow();
+      tableBody.innerHTML = ''; // Clear existing content
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const row = tableBody.insertRow();
 
-          row.insertCell(0).textContent = data.name;
-          row.insertCell(1).textContent = data.bladeCount;
-          row.insertCell(2).textContent = data.color;
-          row.insertCell(3).textContent = `$${data.price}`;
+        row.insertCell(0).textContent = data.name;
+        row.insertCell(1).textContent = data.bladeCount;
+        row.insertCell(2).textContent = data.color;
+        row.insertCell(3).textContent = `$${data.price}`;
 
-          // Create Delete button
-          const deleteButton = document.createElement('button');
-          deleteButton.textContent = 'Delete';
-          deleteButton.onclick = function() {
-            deleteNinjaStar(doc.id);  // Pass the document ID to delete
-          };
-          const actionCell = row.insertCell(4);
-          actionCell.appendChild(deleteButton);
-        });
-      }).catch((error) => {
-        console.error("Error loading products: ", error);
+        // Create Delete button
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.onclick = function() {
+          deleteNinjaStar(doc.id);  // Pass the document ID to delete
+        };
+        const actionCell = row.insertCell(4);
+        actionCell.appendChild(deleteButton);
       });
     }
 
     // Function to delete ninja star
-    function deleteNinjaStar(id) {
-      db.collection("ninja_stars").doc(id).delete()
-        .then(() => {
-          alert("Ninja Star deleted successfully");
-          loadNinjaStars(); // Reload the list after deletion
-        })
-        .catch((error) => {
-          console.error("Error removing document: ", error);
-        });
+    async function deleteNinjaStar(id) {
+      await deleteDoc(doc(db, "ninja_stars", id));
+      alert("Ninja Star deleted successfully");
+      loadNinjaStars(); // Reload the list after deletion
     }
 
     // Function to add a new Ninja Star
-    document.getElementById("addNinjaStarForm").addEventListener("submit", function(event) {
+    document.getElementById("addNinjaStarForm").addEventListener("submit", async function(event) {
       event.preventDefault();
 
       const name = document.getElementById("name").value;
@@ -156,18 +150,19 @@
       const price = parseFloat(document.getElementById("price").value);
 
       // Add the new Ninja Star to Firestore
-      db.collection("ninja_stars").add({
-        name: name,
-        bladeCount: bladeCount,
-        color: color,
-        price: price
-      }).then(() => {
+      try {
+        await addDoc(collection(db, "ninja_stars"), {
+          name: name,
+          bladeCount: bladeCount,
+          color: color,
+          price: price
+        });
         alert("Ninja Star added successfully");
         loadNinjaStars(); // Reload the list after adding
         document.getElementById("addNinjaStarForm").reset(); // Clear the form
-      }).catch((error) => {
+      } catch (error) {
         console.error("Error adding product: ", error);
-      });
+      }
     });
 
     // Load ninja stars when the page loads
