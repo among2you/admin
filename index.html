@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Ninja Star Marketplace</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #444;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #b80000;
+            margin-bottom: 20px;
+        }
+        #admin-form {
+            max-width: 500px;
+            width: 100%;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #b80000;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #a30000;
+        }
+    </style>
+</head>
+<body>
+    <h1>Admin Panel - Add Ninja Star</h1>
+    <div id="admin-form">
+        <input type="text" id="bladeCount" placeholder="Blade Count">
+        <input type="text" id="color" placeholder="Color">
+        <input type="text" id="imageUrl" placeholder="Image URL">
+        <button onclick="addProduct()">Add Ninja Star</button>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDUODWU7BjsFPqIYCETDvRmM4Mn0xwzyZ8",
+            authDomain: "store-9fe4d.firebaseapp.com",
+            projectId: "store-9fe4d",
+            storageBucket: "store-9fe4d.firebasestorage.app",
+            messagingSenderId: "838969552210",
+            appId: "1:838969552210:web:bb7faa1ca1cc83b9705e8b",
+            measurementId: "G-PEQDSMZQR2"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        function addProduct() {
+            const bladeCount = document.getElementById("bladeCount").value;
+            const color = document.getElementById("color").value;
+            const imageUrl = document.getElementById("imageUrl").value;
+
+            db.collection("products").add({
+                bladeCount: bladeCount,
+                color: color,
+                image: imageUrl
+            }).then(() => {
+                alert("Ninja Star added successfully!");
+                document.getElementById("bladeCount").value = "";
+                document.getElementById("color").value = "";
+                document.getElementById("imageUrl").value = "";
+            }).catch(error => console.error("Error adding product:", error));
+        }
+    </script>
+</body>
+</html>
