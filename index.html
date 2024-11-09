@@ -110,34 +110,42 @@
     // Function to get ninja stars and display them in the table
     async function loadNinjaStars() {
       const tableBody = document.getElementById("ninjaStarsTable").getElementsByTagName('tbody')[0];
-      const querySnapshot = await getDocs(collection(db, "ninja_stars"));
+      try {
+        const querySnapshot = await getDocs(collection(db, "ninja_stars"));
+        
+        tableBody.innerHTML = ''; // Clear existing content
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const row = tableBody.insertRow();
 
-      tableBody.innerHTML = ''; // Clear existing content
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        const row = tableBody.insertRow();
+          row.insertCell(0).textContent = data.name;
+          row.insertCell(1).textContent = data.bladeCount;
+          row.insertCell(2).textContent = data.color;
+          row.insertCell(3).textContent = `$${data.price}`;
 
-        row.insertCell(0).textContent = data.name;
-        row.insertCell(1).textContent = data.bladeCount;
-        row.insertCell(2).textContent = data.color;
-        row.insertCell(3).textContent = `$${data.price}`;
-
-        // Create Delete button
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Delete';
-        deleteButton.onclick = function() {
-          deleteNinjaStar(doc.id);  // Pass the document ID to delete
-        };
-        const actionCell = row.insertCell(4);
-        actionCell.appendChild(deleteButton);
-      });
+          // Create Delete button
+          const deleteButton = document.createElement('button');
+          deleteButton.textContent = 'Delete';
+          deleteButton.onclick = function() {
+            deleteNinjaStar(doc.id);  // Pass the document ID to delete
+          };
+          const actionCell = row.insertCell(4);
+          actionCell.appendChild(deleteButton);
+        });
+      } catch (error) {
+        console.error("Error loading ninja stars: ", error);
+      }
     }
 
     // Function to delete ninja star
     async function deleteNinjaStar(id) {
-      await deleteDoc(doc(db, "ninja_stars", id));
-      alert("Ninja Star deleted successfully");
-      loadNinjaStars(); // Reload the list after deletion
+      try {
+        await deleteDoc(doc(db, "ninja_stars", id));
+        alert("Ninja Star deleted successfully");
+        loadNinjaStars(); // Reload the list after deletion
+      } catch (error) {
+        console.error("Error deleting ninja star: ", error);
+      }
     }
 
     // Function to add a new Ninja Star
@@ -149,8 +157,8 @@
       const color = document.getElementById("color").value;
       const price = parseFloat(document.getElementById("price").value);
 
-      // Add the new Ninja Star to Firestore
       try {
+        // Add the new Ninja Star to Firestore
         await addDoc(collection(db, "ninja_stars"), {
           name: name,
           bladeCount: bladeCount,
@@ -161,7 +169,8 @@
         loadNinjaStars(); // Reload the list after adding
         document.getElementById("addNinjaStarForm").reset(); // Clear the form
       } catch (error) {
-        console.error("Error adding product: ", error);
+        console.error("Error adding ninja star: ", error);
+        alert("There was an error adding the ninja star. Please try again.");
       }
     });
 
